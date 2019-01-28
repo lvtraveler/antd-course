@@ -2,6 +2,7 @@ import React from 'React';
 import ShoppingList from './shoppinglist.js';
 import Picture from './Picture.js';
 
+//内容
 class Content extends React.Component {
   render() {
     const picture = {
