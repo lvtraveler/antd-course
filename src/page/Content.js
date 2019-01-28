@@ -1,7 +1,8 @@
 import React from 'React';
 import ShoppingList from './shoppinglist.js';
 import Picture from './Picture.js';
-
+import Square from './Square.js';
+import HelloWorld from './HelloWorld';
 //内容
 class Content extends React.Component {
   render() {
@@ -13,6 +14,8 @@ class Content extends React.Component {
         <ShoppingList name="张三" />
         <Picture src={picture.src}>
         </Picture>
+        <Square></Square>
+        <HelloWorld></HelloWorld>
       </div>
     );
   }
