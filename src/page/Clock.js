@@ -1,5 +1,5 @@
 import React from 'react';
-
+//其中三个最重要最常用的生命周期
 class Clock extends React.Component {
     constructor(props){
         super(props);
