@@ -1,3 +1,4 @@
+//图片
 const Picture = (props) => {
     return (
       <div>

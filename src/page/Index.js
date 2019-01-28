@@ -2,8 +2,6 @@ import React from 'React';
 
 import Content from './Content';
 import Clock from './Clock';
-
-
 //首页
 class Index extends React.Component {
     render() {
