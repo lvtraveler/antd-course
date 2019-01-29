@@ -1,5 +1,5 @@
 export default {
-    // singular: true,
+    singular: true,
     plugins: [
         ['umi-plugin-react', {
             antd:true,
@@ -10,7 +10,6 @@ export default {
         {
             path: '/',component: '../layout/index',
             routes:[
-                // {path:'/',component:'HelloWorld'},
                 {path:'/helloworld',component:'HelloWorld'},
                 {path: '/', component: 'puzzlecards' },
                 {
