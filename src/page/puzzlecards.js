@@ -13,18 +13,19 @@ const mapStateToProps = (state) => {
 
 const mapDispatchToProps = (dispatch) => {
   return {
-    onClickAdd: (newCard) => {
-      const action = {
-        type: `${namespace}/addNewCard`,
-        payload: newCard,
-      };
-      dispatch(action);
+    onDidMount: () => {
+        dispatch({
+            type: `${namespace}/queryInitCards`,
+        });
     },
   };
 };
 
 @connect(mapStateToProps, mapDispatchToProps)
 export default class PuzzleCardsPage extends Component {
+  componentDidMount() {
+      this.props.onDidMount();
+  }
   render() {
     return (
       <div>
