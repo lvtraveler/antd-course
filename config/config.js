@@ -4,6 +4,9 @@ export default {
         ['umi-plugin-react', {
             antd:true,
             dva: true,
+            locale: {
+                enable: true,
+            },
         }],
     ],
     routes: [
@@ -12,6 +15,7 @@ export default {
             routes:[
                 {path:'/helloworld',component:'HelloWorld'},
                 {path: '/', component: 'puzzlecards' },
+                { path: 'list', component: '../page/list' },
                 {
                     path:'/dashboard',
                     routes:[
