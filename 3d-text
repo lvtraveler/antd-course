@@ -1,0 +1,172 @@
+// 引入Three.js库
+import * as THREE from 'three';
+import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
+import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import {OutlineEffect} from 'three/examples/jsm/effects/OutlineEffect.js'
+
+// 创建场景、相机和渲染器
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+let material = null;
+
+const textElement = document.getElementById('text-field');
+let fontValue = document.getElementById('text-field').value;
+
+textElement.addEventListener('input',()=>{
+    const textValue = document.getElementById('text-field').value;
+    loadFont(textValue)
+})
+// 加载字体
+
+loadFont(fontValue);
+function loadFont(fontValue) {
+   
+    scene.children.forEach(child => {
+        if(child.type === 'Mesh'){
+            scene.remove(child);
+        }
+        
+        
+    });
+    renderer.render(scene, camera);
+
+    const loader = new FontLoader();
+    loader.load('./FangSong_Regular.json', function (font) {
+        // 创建文字几何体
+        const textGeo = new TextGeometry(fontValue, {
+            font: font,
+            size: 0.6,
+            height: 0.05,  // 指定文本的厚度或高度，以像素为单位
+            
+        });
+    
+        // 中心化文字几何体d
+        textGeo.center();
+        textGeo.computeBoundingBox()
+    
+        // 创建自定义材质，用于实现高亮发光效果
+        const material = new THREE.ShaderMaterial({
+            uniforms: {
+                color: { value: new THREE.Color(0xfd0f65) },
+                outlineColor: { value: new THREE.Color(0xfd0f65) }, // 边框颜色
+                outlineWidth: { value: 1 } // 边框宽度
+    
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform vec3 color;
+                uniform vec3 outlineColor;
+                uniform float outlineWidth;
+                varying vec2 vUv;
+                void main() {
+                    float alpha = 1.0 - smoothstep(outlineWidth - 0.005, outlineWidth + 0.005, length(vUv - 0.5));
+                    if (alpha < 0.5) {
+                        discard; // 丢弃内部像素，只渲染边框
+                    }
+                    gl_FragColor = vec4(mix(outlineColor, color, alpha), alpha);
+                }
+            `,
+            transparent: true,
+            side: THREE.DoubleSide
+        });
+    
+        const materialPhong = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
+    
+        const materailMeshLamber = new THREE.MeshLambertMaterial({
+            color:0xffffff,
+            wireframe:false,
+            emissive:0x1c1ee7 // 文字颜色
+        });
+
+        const textMaterial = new THREE.MeshMatcapMaterial({color: 0xf1fa8c,flatShading: true})
+
+    
+        // 创建网格并添加到场景中
+        const textMesh = new THREE.Mesh(textGeo, materialPhong);
+        scene.add(textMesh);
+    
+        // 设置相机位置
+        camera.position.z = 5;
+    
+        // 创建光源
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(1, 1, 1).normalize();
+        scene.add(light);
+    
+        const ambientLight = new THREE.AmbientLight(0x404040);
+        scene.add(ambientLight);
+    
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(1, 1, 1).normalize();
+        scene.add(directionalLight);
+    
+        // 创建渲染器并添加后期处理通道
+    const composer = new EffectComposer(renderer);
+    composer.setSize(window.innerWidth, window.innerHeight);
+    const selectedObjects = [textMesh];
+     
+    // 添加渲染通道（Render Pass）
+    composer.addPass(new RenderPass(scene, camera));
+     
+    // 创建并配置OutlinePass
+    const outlinePass = new OutlinePass(new THREE.Vector2(window.innerWidth, window.innerHeight), scene, camera, selectedObjects, 1, 0.003, 0.0, 3);
+    outlinePass.renderToScreen = true; // 如果设置为false，则轮廓将不会直接渲染到屏幕上，而是作为后续处理的输入
+     
+    // 配置OutlinePass的发光效果（颜色、厚度等）
+    outlinePass.edgeGlow = true;
+    outlinePass.edgeStrength = 58.0; // 边缘强度
+    outlinePass.pulsePeriod = 0; // 脉冲周期（0表示无脉冲）
+    outlinePass.visibleEdgeColor = new THREE.Color(0xff0075); // 可见边缘颜色（青色发光）
+    // 注意：selectedObjects应该是一个包含你想要添加轮廓的网格的数组
+    
+    // 但是，由于OutlinePass可能无法直接处理带有纹理的网格作为轮廓对象，
+    // 你可能需要创建一个与原始网格相同但不可见的副本，并将其添加到selectedObjects中。
+    // 这通常涉及到创建一个没有纹理、只有基本颜色的网格副本，并将其添加到场景中（但不渲染它），
+    // 然后将其添加到selectedObjects数组中供OutlinePass使用。
+    // 这里为了简化，我们假设OutlinePass能够正确处理你的网格。
+     
+    // 将OutlinePass添加到渲染通道中
+    // composer.addPass(outlinePass);
+    
+        
+    const controls = new OrbitControls(camera, renderer.domElement);
+    
+    const effect = new OutlineEffect(renderer,{
+        defaultThickness: 0.015, //线条粗细
+        defaultColor: [0.2,0.2,1], //线条颜色
+        defaultAlpha:1,
+    })
+
+    // 渲染循环
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        // renderer.render(scene, camera);
+        composer.render(scene,camera); 
+     
+    }
+    animate();
+
+    // 窗口大小调整处理
+    window.addEventListener('resize', function () {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+});
+}
+
+
